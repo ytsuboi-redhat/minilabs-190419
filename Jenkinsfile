@@ -44,23 +44,22 @@ pipeline {
         }
         stage('frontend静的解析') {
             steps {
-                script {
-                    withSonarQubeEnv('default') {
-                        sh """
-                        ${tool 'sonarqube-scanner'}/bin/sonar-scanner \
-                            -Dsonar.projectKey=todo:todo-frontend \
-                            -Dsonar.projectName=todo-frontend \
-                            -Dsonar.projectVersion=1 \
-                            -Dsonar.javascript.lcov.reportPaths=todo-frontend/tests/unit/coverage/lcov.info \
-                            -Dsonar.sources=todo-frontend/src 
-                        """
-                        timeout(time: 1, unit: 'HOURS') {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                            }
-                        }
-                    }
+                withSonarQubeEnv('default') {
+                    sh """
+                    ${tool 'sonarqube-scanner'}/bin/sonar-scanner \
+                        -Dsonar.projectKey=todo:todo-frontend \
+                        -Dsonar.projectName=todo-frontend \
+                        -Dsonar.projectVersion=1 \
+                        -Dsonar.javascript.lcov.reportPaths=todo-frontend/tests/unit/coverage/lcov.info \
+                        -Dsonar.sources=todo-frontend/src 
+                    """
+                }
+            }
+        }
+        stage('Quality Gate for frontend') {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -68,14 +67,13 @@ pipeline {
             steps {
                 withSonarQubeEnv('default') {
                     sh "mvn sonar:sonar -f todo-backend -Dsonar.host.url=http://workshop-sonar:9000"
-                    timeout(time: 1, unit: 'HOURS') {
-                        script {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                            }
-                        }
-                    }
+                }
+            }
+        }
+        stage('Quality Gate for backend') {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
