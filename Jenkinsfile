@@ -35,7 +35,7 @@ pipeline {
                 script {
                     docker.image('todo-mysql').withRun('--net=ci_workshop --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { c ->
                         // Wait until mysql service is up
-                        sh './todo-backend/wait-for-it.sh -t 30 todo-mysql:3306'
+                        sh './todo-backend/wait-for-it.sh -t 60 todo-mysql:3306'
                         // Run Backend UT
                         sh 'mvn clean jacoco:prepare-agent test jacoco:report -f todo-backend'
                     }
