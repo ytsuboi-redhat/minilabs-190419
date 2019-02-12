@@ -54,9 +54,11 @@ pipeline {
                         -Dsonar.sources=todo-frontend/src 
                     """
                     timeout(time: 1, unit: 'HOURS') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        script {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                            }
                         }
                     }
                 }
@@ -67,9 +69,11 @@ pipeline {
                 withSonarQubeEnv('default') {
                     sh "mvn sonar:sonar -f todo-backend -Dsonar.host.url=http://workshop-sonar:9000"
                     timeout(time: 1, unit: 'HOURS') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        script {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                            }
                         }
                     }
                 }
