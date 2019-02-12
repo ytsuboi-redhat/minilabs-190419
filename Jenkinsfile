@@ -33,7 +33,7 @@ pipeline {
         stage('backend単体テスト') {
             steps {
                 script {
-                    docker.image('todo-mysql').withRun('--net=ci_default --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { c ->
+                    docker.image('todo-mysql').withRun('--net=ci_workshop --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { c ->
                         // Wait until mysql service is up
                         sh './todo-backend/wait-for-it.sh -t 30 todo-mysql:3306'
                         // Run Backend UT
@@ -42,7 +42,7 @@ pipeline {
                 }
             }
         }
-        stage('静的解析') {
+        stage('frontend静的解析') {
             steps {
                 withSonarQubeEnv('default') {
                     sh """
@@ -53,8 +53,26 @@ pipeline {
                         -Dsonar.javascript.lcov.reportPaths=todo-frontend/tests/unit/coverage/lcov.info \
                         -Dsonar.sources=todo-frontend/src 
                     """
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
                 }
-                sh "mvn sonar:sonar -f todo-backend -Dsonar.host.url=http://workshop-sonar:9000"
+            }
+        }
+        stage('backend静的解析') {
+            steps {
+                withSonarQubeEnv('default') {
+                    sh "mvn sonar:sonar -f todo-backend -Dsonar.host.url=http://workshop-sonar:9000"
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
             }
         }
         stage('frontendイメージビルド') {
@@ -76,7 +94,7 @@ pipeline {
         stage('APIテスト') {
             steps {
                 script {
-                    docker.image('todo-mysql').withRun('--net=ci_default --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
+                    docker.image('todo-mysql').withRun('--net=ci_workshop --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
                         // Wait until mysql service is up
                         sh './todo-backend/wait-for-it.sh -t 30 todo-mysql:3306'
                         // Run IT
@@ -88,15 +106,15 @@ pipeline {
         stage('受け入れテスト') {
             steps {
                 script {
-                    docker.image('todo-mysql').withRun('--net=ci_default --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
+                    docker.image('todo-mysql').withRun('--net=ci_workshop --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
                         // Wait until mysql service is up
                         sh './todo-backend/wait-for-it.sh -t 30 todo-mysql:3306'
 
-                        docker.image('todo-backend').withRun('--net=ci_default --name=todo-backend -p 8080:8080') { backend ->
+                        docker.image('todo-backend').withRun('--net=ci_workshop --name=todo-backend -p 8080:8080') { backend ->
                             // Wait until mysql service is up
                             sh './todo-backend/wait-for-it.sh -t 30 todo-backend:8080'
 
-                            docker.image('todo-frontend').withRun('--net=ci_default --name=todo-frontend -p 80:80') { frontend ->
+                            docker.image('todo-frontend').withRun('--net=ci_workshop --name=todo-frontend -p 80:80') { frontend ->
                                 // Run AT
                                 sh '_JAVA_OPTIONS=-Dfile.encoding=UTF-8 xvfb-run mvn clean test -f todo-at -Dselenide.baseUrl=http://todo-frontend -Dselenide.browser=firefox -Dwdm.gitHubTokenName=ytsuboi-redhat -Dwdm.gitHubTokenSecret=9d3e1bbbb62942a37c665a96609f7ba1acced0ff'
                             }
@@ -108,11 +126,11 @@ pipeline {
         stage('パフォーマンステスト') {
             steps {
                 script {
-                    docker.image('todo-mysql').withRun('--net=ci_default --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
+                    docker.image('todo-mysql').withRun('--net=ci_workshop --name=todo-mysql -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" -e "MYSQL_USER=todo" -e "MYSQL_PASSWORD=P@ssw0rd" -e "MYSQL_DATABASE=todo" -p 3306:3306') { db ->
                         // Wait until mysql service is up
                         sh './todo-backend/wait-for-it.sh -t 30 todo-mysql:3306'
 
-                        docker.image('todo-backend').withRun('--net=ci_default --name=todo-backend -p 8080:8080') { backend ->
+                        docker.image('todo-backend').withRun('--net=ci_workshop --name=todo-backend -p 8080:8080') { backend ->
                             // Wait until mysql service is up
                             sh './todo-backend/wait-for-it.sh -t 30 todo-backend:8080'
                             // Run PT

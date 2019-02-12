@@ -3,6 +3,8 @@ services:
 #  git:
 #    build: "./git"
 #    container_name: "workshop-git"
+#    networks:
+#      - workshop
 #    ports:
 #      - "9418:9418"
 #    volumes:
@@ -10,6 +12,8 @@ services:
   jenkins:
     build: "./jenkins"
     container_name: "workshop-jenkins"
+    networks:
+      - workshop
     environment: 
       JAVA_OPTS: "-Djava.awt.headless=true -Duser.timezone=Asia/Tokyo -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
     ports:
@@ -21,8 +25,38 @@ services:
   sonar:
     image: "sonarqube:lts"
     container_name: "workshop-sonar"
+    networks:
+      - workshop
     ports:
       - "9000:9000"
+    environment:
+      - sonar.jdbc.url=jdbc:postgresql://sonar-db:5432/sonar
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions   
+  sonar-db:
+    image: postgres
+    container_name: "workshop-sonar-db"
+    networks:
+      - workshop
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - postgresql_data:/var/lib/postgresql/data
+
+networks:
+  workshop:
+    driver: bridge
+
 volumes:
 #  vol-git:
   vol-jenkins:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  postgresql:
+  postgresql_data:
