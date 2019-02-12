@@ -44,17 +44,17 @@ pipeline {
         }
         stage('frontend静的解析') {
             steps {
-                withSonarQubeEnv('default') {
-                    sh """
-                      ${tool 'sonarqube-scanner'}/bin/sonar-scanner \
-                        -Dsonar.projectKey=todo:todo-frontend \
-                        -Dsonar.projectName=todo-frontend \
-                        -Dsonar.projectVersion=1 \
-                        -Dsonar.javascript.lcov.reportPaths=todo-frontend/tests/unit/coverage/lcov.info \
-                        -Dsonar.sources=todo-frontend/src 
-                    """
-                    timeout(time: 1, unit: 'HOURS') {
-                        script {
+                script {
+                    withSonarQubeEnv('default') {
+                        sh """
+                        ${tool 'sonarqube-scanner'}/bin/sonar-scanner \
+                            -Dsonar.projectKey=todo:todo-frontend \
+                            -Dsonar.projectName=todo-frontend \
+                            -Dsonar.projectVersion=1 \
+                            -Dsonar.javascript.lcov.reportPaths=todo-frontend/tests/unit/coverage/lcov.info \
+                            -Dsonar.sources=todo-frontend/src 
+                        """
+                        timeout(time: 1, unit: 'HOURS') {
                             def qg = waitForQualityGate()
                             if (qg.status != 'OK') {
                                 error "Pipeline aborted due to quality gate failure: ${qg.status}"
