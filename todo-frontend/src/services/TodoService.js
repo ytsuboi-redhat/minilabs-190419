@@ -3,8 +3,7 @@ import Axios from 'axios'
 export default class TodoService {
   constructor () {
     this.instance = Axios.create({
-      // baseURL: '/api/todos',
-      baseURL: 'http://localhost:8080/todos',
+      baseURL: '/api/todos',
       timeout: 1000,
       headers: {
         'Content-Type': 'application/json',

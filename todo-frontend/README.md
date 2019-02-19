@@ -1,4 +1,4 @@
-# todo-base-frontend
+# todo-frontend-jest
 
 ## Project setup
 ```

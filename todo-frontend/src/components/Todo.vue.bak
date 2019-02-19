@@ -36,6 +36,7 @@
               </tr>
             </tbody>
           </table>
+          <button id="addButton" type="button" name="addButton" class="btn btn-primary col-sm-3" v-on:click="addRow()">add row</button>
         </div>
       </div>
     </div>
@@ -52,6 +53,7 @@ export default {
   },
   data () {
     return {
+      service: new TodoService(),
       tabVisible: 'd-none',
       message: '',
       todos: []
@@ -59,8 +61,7 @@ export default {
   },
   methods: {
     getAll () {
-      const service = new TodoService()
-      service.getAll()
+      this.service.getAll()
         .then(response => {
           this.tabVisible = 'd-block'
           this.todos = response.data
@@ -69,13 +70,24 @@ export default {
           this.message = 'error'
         })
     },
-    add () {
+    addRow () {
       this.todos.push({
         todoId: null,
         title: '',
         status: '',
         description: ''
       })
+    },
+    save (todo) {
+      // TODO
+      this.service.getAll()
+        .then(response => {
+          this.tabVisible = 'd-block'
+          this.todos = response.data
+        })
+        .catch(() => {
+          this.message = 'error'
+        })
     }
   }
 }
